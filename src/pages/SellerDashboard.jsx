@@ -19,8 +19,15 @@ function StatCard({ label, value, accent }) {
   );
 }
 
-function RestockRow({ product, onRestocked }) {
-  const [amount, setAmount] = useState(10);
+function ProductRow({ product, categories, onChanged }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [restockAmount, setRestockAmount] = useState(10);
+  const [editForm, setEditForm] = useState({
+    name: product.name,
+    price: product.price,
+    category_id: product.category?.id || "",
+    image_url: product.image_url || "",
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -28,8 +35,8 @@ function RestockRow({ product, onRestocked }) {
     setIsSubmitting(true);
     setError("");
     try {
-      await api.adjustStock(product.id, Number(amount), "Réapprovisionnement manuel (dashboard)");
-      onRestocked();
+      await api.adjustStock(product.id, Number(restockAmount), "Réapprovisionnement manuel (dashboard)");
+      onChanged();
     } catch (err) {
       setError("Échec du réapprovisionnement.");
     } finally {
@@ -37,27 +44,148 @@ function RestockRow({ product, onRestocked }) {
     }
   }
 
+  async function handleSaveEdit() {
+    setIsSubmitting(true);
+    setError("");
+    try {
+      await api.updateProduct(product.id, {
+        name: editForm.name,
+        price: Number(editForm.price),
+        category_id: editForm.category_id || undefined,
+        image_url: editForm.image_url || undefined,
+      });
+      setIsEditing(false);
+      onChanged();
+    } catch (err) {
+      setError("Échec de la modification.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm(`Supprimer "${product.name}" du catalogue ?`)) return;
+    setIsSubmitting(true);
+    try {
+      await api.deleteProduct(product.id);
+      onChanged();
+    } catch (err) {
+      setError("Échec de la suppression.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleReactivate() {
+    setIsSubmitting(true);
+    try {
+      await api.updateProduct(product.id, { is_active: true });
+      onChanged();
+    } catch (err) {
+      setError("Échec de la réactivation.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  if (isEditing) {
+    return (
+      <tr>
+        <td>
+          <input
+            value={editForm.name}
+            onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+            style={{ width: "100%" }}
+          />
+        </td>
+        <td>
+          <select
+            value={editForm.category_id}
+            onChange={(e) => setEditForm((f) => ({ ...f, category_id: e.target.value }))}
+          >
+            <option value="">Non catégorisé</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
+        </td>
+        <td>
+          <input
+            type="number"
+            step="0.01"
+            min="0.01"
+            className="restock-input"
+            value={editForm.price}
+            onChange={(e) => setEditForm((f) => ({ ...f, price: e.target.value }))}
+          />
+        </td>
+        <td colSpan={2}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn-small" onClick={handleSaveEdit} disabled={isSubmitting}>
+              {isSubmitting ? "..." : "Enregistrer"}
+            </button>
+            <button
+              className="btn-small"
+              style={{ background: "transparent", color: "var(--color-ink-soft)" }}
+              onClick={() => setIsEditing(false)}
+              disabled={isSubmitting}
+            >
+              Annuler
+            </button>
+          </div>
+          {error && <div style={{ color: "var(--color-danger)", fontSize: 12, marginTop: 4 }}>{error}</div>}
+        </td>
+      </tr>
+    );
+  }
+
   return (
-    <tr>
-      <td>{product.name}</td>
+    <tr style={!product.is_active ? { opacity: 0.5 } : undefined}>
+      <td>
+        {product.name}
+        {!product.is_active && (
+          <span style={{ marginLeft: 8, fontSize: 11, color: "var(--color-danger)", fontWeight: 600 }}>
+            SUPPRIMÉ
+          </span>
+        )}
+      </td>
       <td>{product.category?.name.replace(/_/g, " ") || "—"}</td>
       <td className="mono">{formatPrice(product.price)}</td>
       <td style={{ minWidth: 140 }}>
         <StockGauge quantity={product.stock?.quantity ?? 0} />
       </td>
       <td>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input
-            type="number"
-            min={1}
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="restock-input"
-          />
-          <button className="btn-small" onClick={handleRestock} disabled={isSubmitting}>
-            {isSubmitting ? "..." : "Réapprovisionner"}
+        {product.is_active ? (
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <input
+              type="number"
+              min={1}
+              value={restockAmount}
+              onChange={(e) => setRestockAmount(e.target.value)}
+              className="restock-input"
+            />
+            <button className="btn-small" onClick={handleRestock} disabled={isSubmitting}>
+              Réapprovisionner
+            </button>
+            <button className="btn-small" onClick={() => setIsEditing(true)} disabled={isSubmitting}>
+              Modifier
+            </button>
+            <button
+              className="btn-small"
+              style={{ background: "var(--color-danger)" }}
+              onClick={handleDelete}
+              disabled={isSubmitting}
+            >
+              Supprimer
+            </button>
+          </div>
+        ) : (
+          <button className="btn-small" onClick={handleReactivate} disabled={isSubmitting}>
+            Réactiver
           </button>
-        </div>
+        )}
         {error && <div style={{ color: "var(--color-danger)", fontSize: 12, marginTop: 4 }}>{error}</div>}
       </td>
     </tr>
@@ -188,6 +316,7 @@ function NewProductForm({ onCreated }) {
 export default function SellerDashboard() {
   const [summary, setSummary] = useState(null);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [toastMessage, setToastMessage] = useState("");
@@ -203,6 +332,10 @@ export default function SellerDashboard() {
       })
       .catch((err) => setError(err))
       .finally(() => setIsLoading(false));
+  }, []);
+
+  useEffect(() => {
+    api.listCategories().then(setCategories).catch(() => setCategories([]));
   }, []);
 
   useEffect(() => {
@@ -295,7 +428,7 @@ export default function SellerDashboard() {
             </thead>
             <tbody>
               {products.map((p) => (
-                <RestockRow key={p.id} product={p} onRestocked={handleRestocked} />
+                <ProductRow key={p.id} product={p} categories={categories} onChanged={handleRestocked} />
               ))}
             </tbody>
           </table>

@@ -81,6 +81,10 @@ export const api = {
   listMyProducts: () => request("/dashboard/products"),
   createProduct: (payload) =>
     request("/products", { method: "POST", body: JSON.stringify(payload) }),
+  updateProduct: (productId, payload) =>
+    request(`/products/${productId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  deleteProduct: (productId) =>
+    request(`/products/${productId}`, { method: "DELETE" }),
   adjustStock: (productId, quantityDelta, reason) =>
     request(`/stocks/${productId}/adjust`, {
       method: "POST",
