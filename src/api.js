@@ -72,13 +72,21 @@ export const api = {
     request(`/recommendations/similar/${productId}?top_k=${topK}`),
 
   // ---- Commandes ----
-  createOrder: (items) =>
-    request("/orders", { method: "POST", body: JSON.stringify({ items }) }),
+  createOrder: (items, shippingAddress, shippingPhone) =>
+    request("/orders", {
+      method: "POST",
+      body: JSON.stringify({
+        items,
+        shipping_address: shippingAddress,
+        shipping_phone: shippingPhone,
+      }),
+    }),
   listMyOrders: () => request("/orders"),
 
   // ---- Dashboard vendeur ----
   getDashboardSummary: () => request("/dashboard/summary"),
   listMyProducts: () => request("/dashboard/products"),
+  listSellerOrders: () => request("/dashboard/orders"),
   createProduct: (payload) =>
     request("/products", { method: "POST", body: JSON.stringify(payload) }),
   updateProduct: (productId, payload) =>

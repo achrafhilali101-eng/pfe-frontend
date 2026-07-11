@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api";
-import { useAuth } from "../context/AuthContext";
 import ProductCard from "../components/ProductCard";
 import Toast from "../components/Toast";
 
@@ -9,7 +8,6 @@ const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 350;
 
 export default function Catalog() {
-  const { user } = useAuth();
   const [searchParams] = useSearchParams();
 
   const [products, setProducts] = useState([]);
@@ -22,8 +20,6 @@ export default function Catalog() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [toastMessage, setToastMessage] = useState("");
-
-  const [recommendations, setRecommendations] = useState([]);
 
   // Debounce : on attend une pause dans la frappe avant de relancer la recherche,
   // pour éviter un appel API à chaque caractère tapé (catalogue de 30k+ produits).
@@ -53,14 +49,6 @@ export default function Catalog() {
   }, [search, categoryId, page]);
 
   useEffect(() => {
-    const loadRecommendations = user
-      ? api.recommendForUser(user.id, 6)
-      : api.recommendAnonymous(6);
-
-    loadRecommendations.then(setRecommendations).catch(() => setRecommendations([]));
-  }, [user]);
-
-  useEffect(() => {
     if (!toastMessage) return;
     const timer = setTimeout(() => setToastMessage(""), 2000);
     return () => clearTimeout(timer);
@@ -74,24 +62,6 @@ export default function Catalog() {
 
   return (
     <div className="page">
-      {recommendations.length > 0 && (
-        <section>
-          <h2 className="section-title">
-            {user ? "Recommandé pour vous" : "Populaire en ce moment"}
-          </h2>
-          <p className="section-subtitle">
-            {user
-              ? "Sélection personnalisée selon vos achats précédents."
-              : "Connectez-vous pour des recommandations personnalisées."}
-          </p>
-          <div className="product-grid">
-            {recommendations.map((product) => (
-              <ProductCard key={product.id} product={product} onAdd={handleQuickAdd} />
-            ))}
-          </div>
-        </section>
-      )}
-
       <section>
         <h2 className="section-title">Catalogue</h2>
         <p className="section-subtitle">{total.toLocaleString("fr-FR")} produits disponibles</p>

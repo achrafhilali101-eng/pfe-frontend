@@ -316,6 +316,7 @@ function NewProductForm({ onCreated }) {
 export default function SellerDashboard() {
   const [summary, setSummary] = useState(null);
   const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -325,10 +326,11 @@ export default function SellerDashboard() {
   const loadData = useCallback(() => {
     setIsLoading(true);
     setError(null);
-    Promise.all([api.getDashboardSummary(), api.listMyProducts()])
-      .then(([summaryData, productsData]) => {
+    Promise.all([api.getDashboardSummary(), api.listMyProducts(), api.listSellerOrders()])
+      .then(([summaryData, productsData, ordersData]) => {
         setSummary(summaryData);
         setProducts(productsData);
+        setOrders(ordersData);
       })
       .catch((err) => setError(err))
       .finally(() => setIsLoading(false));
@@ -432,6 +434,62 @@ export default function SellerDashboard() {
               ))}
             </tbody>
           </table>
+        )}
+      </section>
+
+      <section>
+        <h2 className="section-title">Commandes reçues</h2>
+        <p className="section-subtitle">
+          {orders.length} commande(s) contenant au moins un de vos produits
+        </p>
+
+        {orders.length === 0 ? (
+          <div className="empty-state">Aucune commande reçue pour l'instant.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {orders.map((order) => (
+              <div key={order.id} className="product-card" style={{ padding: "16px 20px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: 10,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>
+                      {order.buyer_name || order.buyer_email}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--color-ink-soft)" }}>
+                      {order.buyer_email}
+                    </div>
+                  </div>
+                  <span className="product-price">{formatPrice(order.total_amount)}</span>
+                </div>
+
+                <div style={{ fontSize: 12, color: "var(--color-ink-soft)", marginBottom: 10 }}>
+                  {order.shipping_address && <div>📍 {order.shipping_address}</div>}
+                  {order.shipping_phone && <div>📞 {order.shipping_phone}</div>}
+                </div>
+
+                <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 10 }}>
+                  {order.items.map((item, i) => (
+                    <div
+                      key={i}
+                      style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "4px 0" }}
+                    >
+                      <span>
+                        {item.product_name || "Produit"}{" "}
+                        <span style={{ color: "var(--color-ink-soft)" }}>× {item.quantity}</span>
+                      </span>
+                      <span className="mono">{formatPrice(item.unit_price * item.quantity)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </section>
 

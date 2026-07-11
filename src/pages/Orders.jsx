@@ -25,21 +25,14 @@ const STATUS_LABELS = {
 };
 
 function OrderCard({ order }) {
-  const [expanded, setExpanded] = useState(false);
-
   return (
     <div className="product-card" style={{ padding: 0, overflow: "hidden" }}>
-      <button
-        onClick={() => setExpanded((e) => !e)}
+      <div
         style={{
-          width: "100%",
-          background: "none",
-          border: "none",
           padding: "16px 20px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          textAlign: "left",
         }}
       >
         <div>
@@ -50,48 +43,49 @@ function OrderCard({ order }) {
             {STATUS_LABELS[order.status] || order.status}
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <span className="product-price">{formatPrice(order.total_amount)}</span>
-          <span
+        <span className="product-price">{formatPrice(order.total_amount)}</span>
+      </div>
+
+      <div
+        style={{
+          borderTop: "1px solid var(--color-border)",
+          padding: "12px 20px 16px",
+          background: "var(--color-bg)",
+        }}
+      >
+        {order.items.map((item, i) => (
+          <div
+            key={i}
             style={{
-              display: "inline-block",
-              transition: "transform var(--transition-base)",
-              transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-              color: "var(--color-primary)",
+              display: "flex",
+              justifyContent: "space-between",
+              padding: "8px 0",
+              borderBottom: i < order.items.length - 1 ? "1px solid var(--color-border)" : "none",
+              fontSize: 13,
             }}
           >
-            ▾
-          </span>
-        </div>
-      </button>
+            <span>
+              {item.product_name || "Produit"} <span style={{ color: "var(--color-ink-soft)" }}>× {item.quantity}</span>
+            </span>
+            <span className="mono">{formatPrice(item.unit_price * item.quantity)}</span>
+          </div>
+        ))}
 
-      {expanded && (
-        <div
-          style={{
-            borderTop: "1px solid var(--color-border)",
-            padding: "12px 20px 16px",
-            background: "var(--color-bg)",
-          }}
-        >
-          {order.items.map((item, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "8px 0",
-                borderBottom: i < order.items.length - 1 ? "1px solid var(--color-border)" : "none",
-                fontSize: 13,
-              }}
-            >
-              <span>
-                {item.product_name || "Produit"} <span style={{ color: "var(--color-ink-soft)" }}>× {item.quantity}</span>
-              </span>
-              <span className="mono">{formatPrice(item.unit_price * item.quantity)}</span>
-            </div>
-          ))}
-        </div>
-      )}
+        {(order.shipping_address || order.shipping_phone) && (
+          <div
+            style={{
+              marginTop: 10,
+              paddingTop: 10,
+              borderTop: "1px solid var(--color-border)",
+              fontSize: 12,
+              color: "var(--color-ink-soft)",
+            }}
+          >
+            {order.shipping_address && <div>📍 {order.shipping_address}</div>}
+            {order.shipping_phone && <div>📞 {order.shipping_phone}</div>}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -13,6 +13,8 @@ export default function Cart() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const [shippingAddress, setShippingAddress] = useState("");
+  const [shippingPhone, setShippingPhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -21,11 +23,19 @@ export default function Cart() {
       navigate("/connexion");
       return;
     }
+
+    if (shippingAddress.trim().length < 5 || shippingPhone.trim().length < 6) {
+      setError("Merci de renseigner une adresse et un numéro de téléphone valides.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
     try {
       await api.createOrder(
-        items.map((i) => ({ product_id: i.product.id, quantity: i.quantity }))
+        items.map((i) => ({ product_id: i.product.id, quantity: i.quantity })),
+        shippingAddress.trim(),
+        shippingPhone.trim()
       );
       clearCart();
       navigate("/mes-commandes");
@@ -97,6 +107,34 @@ export default function Cart() {
           </div>
         ))}
       </div>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 className="section-title" style={{ fontSize: 20 }}>Livraison</h2>
+        <p className="section-subtitle">Ces informations serviront au vendeur pour expédier votre commande.</p>
+
+        <div className="auth-card" style={{ padding: 24 }}>
+          <div className="form-field">
+            <label htmlFor="shipping_address">Adresse de livraison</label>
+            <input
+              id="shipping_address"
+              type="text"
+              value={shippingAddress}
+              onChange={(e) => setShippingAddress(e.target.value)}
+              placeholder="Ex: 12 Rue des Fleurs, Rabat"
+            />
+          </div>
+          <div className="form-field" style={{ marginBottom: 0 }}>
+            <label htmlFor="shipping_phone">Numéro de téléphone</label>
+            <input
+              id="shipping_phone"
+              type="tel"
+              value={shippingPhone}
+              onChange={(e) => setShippingPhone(e.target.value)}
+              placeholder="Ex: +212 6 00 00 00 00"
+            />
+          </div>
+        </div>
+      </section>
 
       {error && <div className="form-error">{error}</div>}
 
