@@ -72,8 +72,8 @@ export const api = {
     request(`/recommendations/similar/${productId}?top_k=${topK}`),
 
   // ---- Commandes ----
-  createOrder: (items, shippingAddress, shippingPhone) =>
-    request("/orders", {
+  createCheckoutSession: (items, shippingAddress, shippingPhone) =>
+    request("/orders/checkout-session", {
       method: "POST",
       body: JSON.stringify({
         items,
@@ -81,6 +81,8 @@ export const api = {
         shipping_phone: shippingPhone,
       }),
     }),
+  confirmPayment: (orderId, sessionId) =>
+    request(`/orders/${orderId}/confirm-payment?session_id=${encodeURIComponent(sessionId)}`),
   listMyOrders: () => request("/orders"),
 
   // ---- Dashboard vendeur ----

@@ -5,9 +5,10 @@ import { useCart } from "../context/CartContext";
 import ProductCard from "../components/ProductCard";
 import StockGauge from "../components/StockGauge";
 import Toast from "../components/Toast";
+import { useStockSocket } from "../hooks/useStockSocket";
 
 function formatPrice(price) {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(price);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(price);
 }
 
 export default function ProductDetail() {
@@ -37,6 +38,16 @@ export default function ProductDetail() {
     const timer = setTimeout(() => setToastMessage(""), 2500);
     return () => clearTimeout(timer);
   }, [toastMessage]);
+
+  // Si un autre client achète ce même produit pendant que cette page est
+  // ouverte, la jauge de stock se met à jour ici en temps réel.
+  useStockSocket((productId, quantity) => {
+    setProduct((current) =>
+      current && current.id === productId
+        ? { ...current, stock: { ...current.stock, quantity } }
+        : current
+    );
+  });
 
   function handleAddToCart() {
     addItem(product, quantity);

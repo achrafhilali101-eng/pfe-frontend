@@ -12,6 +12,7 @@ import Register from "./pages/Register";
 import Orders from "./pages/Orders";
 import SellerDashboard from "./pages/SellerDashboard";
 import Cart from "./pages/Cart";
+import Confirmation from "./pages/Confirmation";
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
               <Route path="/mes-commandes" element={<Orders />} />
               <Route path="/dashboard" element={<SellerDashboard />} />
               <Route path="/panier" element={<Cart />} />
+              <Route path="/confirmation" element={<Confirmation />} />
             </Routes>
           </main>
           <Footer />

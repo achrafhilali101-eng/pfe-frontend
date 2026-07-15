@@ -15,7 +15,10 @@ export function AuthProvider({ children }) {
     }
     api
       .me()
-      .then(setUser)
+      .then((me) => {
+        setUser(me);
+        window.dispatchEvent(new CustomEvent("user-changed", { detail: me.id }));
+      })
       .catch(() => clearToken())
       .finally(() => setIsLoading(false));
   }, []);
@@ -25,6 +28,7 @@ export function AuthProvider({ children }) {
     setToken(access_token);
     const me = await api.me();
     setUser(me);
+    window.dispatchEvent(new CustomEvent("user-changed", { detail: me.id }));
     return me;
   }
 
@@ -33,12 +37,14 @@ export function AuthProvider({ children }) {
     setToken(access_token);
     const me = await api.me();
     setUser(me);
+    window.dispatchEvent(new CustomEvent("user-changed", { detail: me.id }));
     return me;
   }
 
   function logout() {
     clearToken();
     setUser(null);
+    window.dispatchEvent(new CustomEvent("user-changed", { detail: null }));
   }
 
   return (

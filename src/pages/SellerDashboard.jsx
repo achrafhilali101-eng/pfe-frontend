@@ -3,9 +3,10 @@ import { api } from "../api";
 import StockGauge from "../components/StockGauge";
 import RevenueChart from "../components/RevenueChart";
 import Toast from "../components/Toast";
+import { useStockSocket } from "../hooks/useStockSocket";
 
 function formatPrice(price) {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(price);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(price);
 }
 
 function StatCard({ label, value, accent }) {
@@ -339,6 +340,17 @@ export default function SellerDashboard() {
   useEffect(() => {
     api.listCategories().then(setCategories).catch(() => setCategories([]));
   }, []);
+
+  // Mise à jour en temps réel : quand un achat ou un réassort modifie le stock
+  // (par n'importe quel utilisateur, sur n'importe quel appareil), la jauge de
+  // stock du produit concerné se met à jour ici sans recharger la page.
+  useStockSocket((productId, quantity) => {
+    setProducts((current) =>
+      current.map((p) =>
+        p.id === productId ? { ...p, stock: { ...p.stock, quantity } } : p
+      )
+    );
+  });
 
   useEffect(() => {
     loadData();

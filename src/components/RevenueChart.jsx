@@ -2,7 +2,7 @@
 // pour limiter le nombre de dépendances du projet).
 
 function formatPrice(price) {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(price);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(price);
 }
 
 export default function RevenueChart({ data }) {

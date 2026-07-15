@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 
 function formatPrice(price) {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(price);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(price);
 }
 
 export default function Cart() {
@@ -20,7 +20,7 @@ export default function Cart() {
 
   async function handleCheckout() {
     if (!user) {
-      navigate("/connexion");
+      navigate("/inscription");
       return;
     }
 
@@ -32,16 +32,16 @@ export default function Cart() {
     setIsSubmitting(true);
     setError("");
     try {
-      await api.createOrder(
+      const { checkout_url } = await api.createCheckoutSession(
         items.map((i) => ({ product_id: i.product.id, quantity: i.quantity })),
         shippingAddress.trim(),
         shippingPhone.trim()
       );
-      clearCart();
-      navigate("/mes-commandes");
+      // Le panier sera vidé après confirmation réelle du paiement (page /confirmation),
+      // pas ici -- pour ne pas le perdre si l'acheteur annule sur Stripe.
+      window.location.href = checkout_url;
     } catch (err) {
-      setError(err.message || "Impossible de finaliser la commande.");
-    } finally {
+      setError(err.message || "Impossible de démarrer le paiement.");
       setIsSubmitting(false);
     }
   }

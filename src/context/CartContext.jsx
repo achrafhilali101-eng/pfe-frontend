@@ -13,12 +13,35 @@ function loadInitialCart() {
   }
 }
 
+const STORAGE_PREFIX = "souklab_cart_";
+
+function loadCartFor(userId) {
+  try {
+    const raw = localStorage.getItem(STORAGE_PREFIX + (userId || "guest"));
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(loadInitialCart);
+  const [userId, setUserId] = useState(() => localStorage.getItem("access_token") ? "pending" : "guest");
+  const [items, setItems] = useState(() => loadCartFor(userId));
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    localStorage.setItem(STORAGE_PREFIX + userId, JSON.stringify(items));
+  }, [items, userId]);
+
+  // Change de panier quand le compte change (connexion/déconnexion/inscription).
+  useEffect(() => {
+    function handleUserChanged(e) {
+      const newUserId = e.detail || "guest";
+      setUserId(newUserId);
+      setItems(loadCartFor(newUserId));
+    }
+    window.addEventListener("user-changed", handleUserChanged);
+    return () => window.removeEventListener("user-changed", handleUserChanged);
+  }, []);
 
   function addItem(product, quantity = 1) {
     setItems((current) => {
